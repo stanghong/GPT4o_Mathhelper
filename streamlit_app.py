@@ -1,6 +1,7 @@
 import streamlit as st
 import openai
 import boto3
+from openai import OpenAI
 from PIL import Image as PILImage
 from io import BytesIO
 
@@ -14,6 +15,7 @@ s3_client = boto3.client(
     aws_access_key_id=st.secrets["aws"]["access_key_id"],
     aws_secret_access_key=st.secrets["aws"]["secret_access_key"]
 )
+client = OpenAI(api_key=openai.api_key)
 bucket_name = 'gpt4o-funtest'
 
 # Streamlit UI components
@@ -56,25 +58,20 @@ if st.button("Send", key='send_button'):
 
         # API call to OpenAI with user input and image
         if st.session_state['s3_image_url']:
-            try:
-                completion = openai.ChatCompletion.create(
-                    model=MODEL,
-                    messages=[
-                        {"role": "system", "content": "You are a helpful assistant that responds in Markdown. Help me with my math homework!"},
-                        {"role": "user", "content": [
-                            {"type": "text", "text": user_input},
-                            {"type": "image_url", "image_url": {"url": st.session_state['s3_image_url']}}
-                        ]}
-                    ],
-                    temperature=0.0,
-                )
-                
-                # Display the response in a chat box using Markdown
-                if completion:
-                    response = completion.choices[0].message['content']
-                    st.markdown(f"**Assistant:**\n{response}", unsafe_allow_html=True)
-            except openai.error.OpenAIError as e:
-                st.error(f"OpenAI API error: {str(e)}")
-            except Exception as e:
-                st.error(f"An unexpected error occurred: {str(e)}")
+            completion = client.chat.completions.create(
+                model=MODEL,
+                messages=[
+                    {"role": "system", "content": "You are a helpful assistant that responds in Markdown. Help me with my math homework!"},
+                    {"role": "user", "content": [
+                        {"type": "text", "text": user_input},
+                        {"type": "image_url", "image_url": {"url": st.session_state['s3_image_url']}}
+                    ]}
+                ],
+                temperature=0.0,
+            )
+            
+            # Display the response in a chat box using Markdown
+            if completion:
+                response = completion.choices[0].message.content
+                st.markdown(f"**Assistant:**\n{response}", unsafe_allow_html=True)
 
