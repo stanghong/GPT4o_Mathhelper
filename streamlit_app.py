@@ -1,13 +1,10 @@
 import streamlit as st
 import openai
-from openai import OpenAI
 import os
 import boto3
 from PIL import Image as PILImage
 from io import BytesIO
-from dotenv import load_dotenv, find_dotenv
 
-# Load environment variables and set API key
 # Load environment variables and set API key
 MODEL = "gpt-4o"
 openai.api_key = os.getenv('OPENAI_API_KEY')
@@ -19,7 +16,6 @@ s3_client = boto3.client(
     aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
     aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY')
 )
-
 bucket_name = 'gpt4o-funtest'
 
 # Streamlit UI components
