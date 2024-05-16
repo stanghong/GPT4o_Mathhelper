@@ -4,11 +4,12 @@ import os
 import boto3
 from PIL import Image as PILImage
 from io import BytesIO
+from dotenv import load_dotenv
 
 # Load environment variables and set API key
+load_dotenv('.env')
 MODEL = "gpt-4o"
 openai.api_key = os.getenv('OPENAI_API_KEY')
-client = openai.OpenAI(api_key=openai.api_key)
 
 # Initialize S3 client
 s3_client = boto3.client(
@@ -55,19 +56,22 @@ if st.button("Send", key='send_button'):
 
         # API call to OpenAI with user input and image
         if st.session_state['s3_image_url']:
-            completion = client.chat.completions.create(
-                model=MODEL,
-                messages=[
-                    {"role": "system", "content": "You are a helpful assistant that responds in Markdown. Help me with my math homework!"},
-                    {"role": "user", "content": [
-                        {"type": "text", "text": user_input},
-                        {"type": "image_url", "image_url": {"url": st.session_state['s3_image_url']}}
-                    ]}
-                ],
-                temperature=0.0,
-            )
-            
-            # Display the response in a chat box using Markdown
-            if completion:
-                response = completion.choices[0].message.content
-                st.markdown(f"**Assistant:**\n{response}", unsafe_allow_html=True)
+            try:
+                completion = openai.ChatCompletion.create(
+                    model=MODEL,
+                    messages=[
+                        {"role": "system", "content": "You are a helpful assistant that responds in Markdown. Help me with my math homework!"},
+                        {"role": "user", "content": [
+                            {"type": "text", "text": user_input},
+                            {"type": "image_url", "image_url": {"url": st.session_state['s3_image_url']}}
+                        ]}
+                    ],
+                    temperature=0.0,
+                )
+                
+                # Display the response in a chat box using Markdown
+                if completion:
+                    response = completion.choices[0].message['content']
+                    st.markdown(f"**Assistant:**\n{response}", unsafe_allow_html=True)
+            except openai.error.OpenAIError as e:
+                st.error(f"Error: {str(e)}")
