@@ -54,17 +54,6 @@ if st.button("Send", key='send_button'):
         # Increment the key for the next input
         st.session_state['input_key'] += 1
 
-        # Test the API key with a simple request -----------
-        try:
-            response = openai.Completion.create(
-                model="text-davinci-003",
-                prompt="Say this is a test",
-                max_tokens=5
-            )
-            print("API Key is valid. Response:", response.choices[0].text.strip())
-        except OpenAIError as e:
-            print(f"OpenAI API error: {str(e)}") ##-----------
-
         # API call to OpenAI with user input and image
         if st.session_state['s3_image_url']:
             try:
