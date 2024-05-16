@@ -8,13 +8,18 @@ from io import BytesIO
 from dotenv import load_dotenv, find_dotenv
 
 # Load environment variables and set API key
-_ = load_dotenv('.env')
+# Load environment variables and set API key
 MODEL = "gpt-4o"
-openai.api_key = os.environ['OPENAI_API_KEY']
-client = OpenAI(api_key=openai.api_key)
+openai.api_key = os.getenv('OPENAI_API_KEY')
+client = openai.OpenAI(api_key=openai.api_key)
 
 # Initialize S3 client
-s3_client = boto3.client('s3')
+s3_client = boto3.client(
+    's3',
+    aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
+    aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY')
+)
+
 bucket_name = 'gpt4o-funtest'
 
 # Streamlit UI components
