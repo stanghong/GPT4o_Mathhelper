@@ -1,21 +1,18 @@
 import streamlit as st
 import openai
-import os
 import boto3
 from PIL import Image as PILImage
 from io import BytesIO
-from dotenv import load_dotenv
 
-# Load environment variables and set API key
-load_dotenv('.env')
+# Load API key from Streamlit secrets
+openai.api_key = st.secrets["openai"]["api_key"]
 MODEL = "gpt-4o"
-openai.api_key = os.getenv('OPENAI_API_KEY')
 
-# Initialize S3 client
+# Initialize S3 client with credentials from Streamlit secrets
 s3_client = boto3.client(
     's3',
-    aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
-    aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY')
+    aws_access_key_id=st.secrets["aws"]["access_key_id"],
+    aws_secret_access_key=st.secrets["aws"]["secret_access_key"]
 )
 bucket_name = 'gpt4o-funtest'
 
@@ -38,8 +35,11 @@ if uploaded_image:
     buffer = BytesIO()
     image.save(buffer, format="PNG")
     buffer.seek(0)
-    s3_client.upload_fileobj(buffer, 'gpt4o-funtest', object_name)
-    st.session_state['s3_image_url'] = f"https://{bucket_name}.s3.amazonaws.com/{object_name}"
+    try:
+        s3_client.upload_fileobj(buffer, bucket_name, object_name)
+        st.session_state['s3_image_url'] = f"https://{bucket_name}.s3.amazonaws.com/{object_name}"
+    except Exception as e:
+        st.error(f"Failed to upload image to S3: {str(e)}")
 
 # Ensure unique keys for user input to avoid DuplicateWidgetID error
 if 'input_key' not in st.session_state:
@@ -74,4 +74,6 @@ if st.button("Send", key='send_button'):
                     response = completion.choices[0].message['content']
                     st.markdown(f"**Assistant:**\n{response}", unsafe_allow_html=True)
             except openai.error.OpenAIError as e:
-                st.error(f"Error: {str(e)}")
+                st.error(f"OpenAI API error: {str(e)}")
+            except Exception as e:
+                st.error(f"An unexpected error occurred: {str(e)}")
