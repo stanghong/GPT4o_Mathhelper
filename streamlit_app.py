@@ -63,7 +63,7 @@ if st.button("Send", key='send_button'):
             )
             print("API Key is valid. Response:", response.choices[0].text.strip())
         except OpenAIError as e:
-            print(f"OpenAI API error: {str(e)}") -----------
+            print(f"OpenAI API error: {str(e)}") ##-----------
 
         # API call to OpenAI with user input and image
         if st.session_state['s3_image_url']:
