@@ -16,7 +16,7 @@ s3_client = boto3.client(
     aws_secret_access_key=st.secrets["aws"]["secret_access_key"]
 )
 client = OpenAI(api_key=openai.api_key)
-bucket_name = 'gpt4o-funtest'
+bucket_name = 'gpt4o-fun-test'
 
 # Streamlit UI components
 st.title("Math Helper Chatbot")
