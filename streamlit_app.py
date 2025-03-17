@@ -6,11 +6,11 @@ from PIL import Image as PILImage
 from io import BytesIO
 
 # Load API keys from Streamlit secrets
-openai.api_key = st.secrets["openai"]["api_key"]
+openai_api_key = st.secrets["openai"]["api_key"]
 MODEL = "gpt-4o"
 
 # Initialize OpenAI client
-client = OpenAI(api_key=openai.api_key)
+client = openai.Client(api_key=openai_api_key)
 
 # Initialize S3 client with credentials from Streamlit secrets
 s3_client = boto3.client(
