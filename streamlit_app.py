@@ -10,7 +10,6 @@ openai_api_key = st.secrets.get("openai", {}).get("api_key")
 aws_access_key_id = st.secrets.get("aws", {}).get("access_key_id")
 aws_secret_access_key = st.secrets.get("aws", {}).get("secret_access_key")
 
-# Ensure API key exists
 if not openai_api_key:
     st.error("OpenAI API key is missing! Add it in Streamlit Secrets.")
     st.stop()
@@ -31,18 +30,15 @@ s3_client = boto3.client(
 client = OpenAI(api_key=openai_api_key)
 bucket_name = 'gpt4o-fun-test'
 
-# Streamlit UI components
 st.title("Math Helper Chatbot")
 
 # Initialize session state for image URL
 if 's3_image_url' not in st.session_state:
     st.session_state['s3_image_url'] = None
 
-# Image uploader
 uploaded_image = st.file_uploader("Upload an image with a math problem", type=["jpg", "jpeg", "png"], key='image_uploader')
 
 if uploaded_image:
-    # Display the uploaded image
     image = PILImage.open(uploaded_image)
     st.image(image, caption='Uploaded Image')
 
@@ -51,6 +47,7 @@ if uploaded_image:
     buffer = BytesIO()
     image.save(buffer, format="PNG")
     buffer.seek(0)
+
     try:
         s3_client.upload_fileobj(buffer, bucket_name, object_name)
         st.session_state['s3_image_url'] = f"https://{bucket_name}.s3.amazonaws.com/{object_name}"
@@ -58,7 +55,6 @@ if uploaded_image:
     except Exception as e:
         st.error(f"Failed to upload image to S3: {str(e)}")
 
-# Ensure unique keys for user input
 if 'input_key' not in st.session_state:
     st.session_state['input_key'] = 0
 
@@ -67,23 +63,22 @@ user_input = st.text_input("Ask a math question or type 'exit' to stop:", key=f'
 if st.button("Send", key='send_button'):
     if user_input.lower() == "exit":
         st.stop()
-    elif user_input:
-        # Increment the key for the next input
+    elif user_input or st.session_state['s3_image_url']:
         st.session_state['input_key'] += 1
 
-        # Construct the OpenAI messages
-        messages = [
-            {"role": "system", "content": "You are a helpful assistant that responds in Markdown. Help me with my math homework!"},
-            {"role": "user", "content": user_input}
-        ]
+        messages = [{"role": "system", "content": "You are a helpful assistant that solves math problems."}]
 
-        # If an image was uploaded, attach the image URL
+        if user_input:
+            messages.append({"role": "user", "content": user_input})
+
         if st.session_state['s3_image_url']:
             messages.append(
-                {"role": "user", "content": f"Here is an image with my math problem: {st.session_state['s3_image_url']}"}
+                {"role": "user", "content": [
+                    {"type": "text", "text": "Solve this math problem:"},
+                    {"type": "image_url", "image_url": {"url": st.session_state['s3_image_url']}}
+                ]}
             )
 
-        # Call OpenAI API
         try:
             completion = client.chat.completions.create(
                 model=MODEL,
@@ -91,7 +86,6 @@ if st.button("Send", key='send_button'):
                 temperature=0.0,
             )
 
-            # Display the response
             if completion:
                 response = completion.choices[0].message.content
                 st.markdown(f"**Assistant:**\n{response}", unsafe_allow_html=True)
